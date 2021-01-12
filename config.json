@@ -1,0 +1,10 @@
+{
+    "Source" : {
+        "Port" : "COM11",
+        "Baudrate" : 115200
+    },
+    "Destination" : {
+        "Port" : "COM13",
+        "Baudrate" : 115200
+    }
+}
