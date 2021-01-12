@@ -15,15 +15,15 @@ logger.level = logging.DEBUG
 LOG_SIZE = 2 * 1024 * 1024
 
 class ModemBridge():
-    def __init__(self, port1, baud1, port2, baud2):
-        self.serial1 = serial.Serial()
-        self.serial1.baudrate = baud1
-        self.serial1.port = port1
-        self.serial1.timeout = 1
-        self.serial2 = serial.Serial()
-        self.serial2.baudrate = baud2
-        self.serial2.port = port2
-        self.serial2.timeout = 1
+    def __init__(self, src_port, src_baud, dst_port, dst_baud):
+        self.src_serial = serial.Serial()
+        self.src_serial.baudrate = src_baud
+        self.src_serial.port = src_port
+        self.src_serial.timeout = 1
+        self.dst_serial = serial.Serial()
+        self.dst_serial.baudrate = dst_baud
+        self.dst_serial.port = dst_port
+        self.dst_serial.timeout = 1
         self.is_running = False
         self.discon_lock = threading.Lock()
     
@@ -42,18 +42,18 @@ class ModemBridge():
     
     def connect(self):
         try:
-            logger.info("Starting bridge {}@{} <-> {}@{}".format(self.serial1.port, self.serial1.baudrate, self.serial2.port, self.serial2.baudrate))
-            self.serial1.open()
-            self.serial2.open()
+            logger.info("Starting bridge {}@{} <-> {}@{}".format(self.src_serial.port, self.src_serial.baudrate, self.dst_serial.port, self.dst_serial.baudrate))
+            self.src_serial.open()
+            self.dst_serial.open()
             # create lock file
             #if self.lockfile is not None:
             #    os.system("touch {}".format(self.lockfile))
             # start threads
             self.is_running = True
-            thread_a = threading.Thread(target=self.rxtx, args=(self.serial1, self.serial2))
+            thread_a = threading.Thread(target=self.rxtx, args=(self.src_serial, self.dst_serial))
             thread_a.setDaemon(True)
             thread_a.start()
-            thread_b = threading.Thread(target=self.rxtx, args=(self.serial2, self.serial1))
+            thread_b = threading.Thread(target=self.rxtx, args=(self.dst_serial, self.src_serial))
             thread_b.setDaemon(True)
             thread_b.start()
             return True
@@ -67,12 +67,12 @@ class ModemBridge():
         # delete lock file
         #if self.lockfile is not None:
         #    os.system("rm {}".format(self.lockfile))
-        if self.serial1.is_open:
-            self.serial1.close()
-            logger.info("Closed bridge port {}".format(self.serial1.port))
-        if self.serial2.is_open:
-            self.serial2.close()
-            logger.info("Closed bridge port {}".format(self.serial2.port))
+        if self.src_serial.is_open:
+            self.src_serial.close()
+            logger.info("Closed bridge port {}".format(self.src_serial.port))
+        if self.dst_serial.is_open:
+            self.dst_serial.close()
+            logger.info("Closed bridge port {}".format(self.dst_serial.port))
         self.discon_lock.release()
 
 def main():
